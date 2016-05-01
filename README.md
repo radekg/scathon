@@ -2,6 +2,10 @@
 
 This is a Scala Marathon Client. The aim is to provide a 100% coverage of the Marathon API (`v0.16.0+`) as a Scala SBT project.
 
+## Build status
+
+[![Build Status](https://travis-ci.org/AppMinistry/scathon.svg?branch=master)](https://travis-ci.org/AppMinistry/scathon)
+
 ## Usage
 
 ### Dependencies
