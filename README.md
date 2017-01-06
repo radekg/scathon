@@ -13,8 +13,8 @@ This is a Scala Marathon Client. The aim is to provide a 100% coverage of the Ma
     scalaVersion := "2.11.8"
     
     libraryDependencies ++= Seq(
-      "com.appministry" %% "scathon-models" % "1.0.0",
-      "com.appministry" %% "scathon-client" % "1.0.0"
+      "com.appministry" %% "scathon-models" % "0.1.1",
+      "com.appministry" %% "scathon-client" % "0.1.1"
     )
     
 ### Creating the client

@@ -1,8 +1,10 @@
 import BuildDefaults._
 
+organization := "com.appministry"
+
 name := "scathon-client"
 
-version := "0.1.0"
+version := "0.1.1"
 
 scalaVersion := BuildDefaults.buildScalaVersion
 
