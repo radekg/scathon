@@ -1,12 +1,10 @@
 import BuildDefaults._
 
-organization := "com.appministry"
+scalaVersion := BuildDefaults.buildScalaVersion
+version := BuildDefaults.buildVersion
+organization := BuildDefaults.buildOrganization
 
 name := "scathon-models"
-
-version := "0.1.1"
-
-scalaVersion := BuildDefaults.buildScalaVersion
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
@@ -14,8 +12,11 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.typesafe.play" %% "play-json" % "2.5.3",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+  "joda-time" % "joda-time" % "2.9.7",
+  "com.typesafe.play" %% "play-json" % "2.6.0-M1",
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )
 
 coverageEnabled := false
+
+crossScalaVersions := Seq("2.11.8", "2.12.1")

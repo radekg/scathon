@@ -1,12 +1,10 @@
 import BuildDefaults._
 
-organization := "com.appministry"
+scalaVersion := BuildDefaults.buildScalaVersion
+version := BuildDefaults.buildVersion
+organization := BuildDefaults.buildOrganization
 
 name := "scathon-testServer"
-
-version := "0.1.1"
-
-scalaVersion := BuildDefaults.buildScalaVersion
 
 resolvers ++= Seq(
   Resolver.sonatypeRepo("releases"),
@@ -14,9 +12,12 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.twitter" %% "finagle-http" % "6.34.0",
+  "com.typesafe" % "config" % "1.3.1",
+  "com.twitter" %% "finagle-http" % "6.41.0",
   "commons-io" % "commons-io" % "2.4",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )
 
 coverageEnabled := false
+
+crossScalaVersions := Seq("2.11.8", "2.12.1")

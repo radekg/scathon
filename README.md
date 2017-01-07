@@ -10,13 +10,22 @@ This is a Scala Marathon Client. The aim is to provide a 100% coverage of the Ma
 
 ### Dependencies
 
-    scalaVersion := "2.11.8"
-    
     libraryDependencies ++= Seq(
-      "com.appministry" %% "scathon-models" % "0.1.1",
-      "com.appministry" %% "scathon-client" % "0.1.1"
+      "com.appministry" %% "scathon-models" % "0.1.2",
+      "com.appministry" %% "scathon-client" % "0.1.2"
     )
-    
+
+In `project/plugins.sbt`, add:
+
+    addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.5.0")
+
+### Scala 2.12
+
+    SCALA_VERSION=2.12.1
+    sbt ++$SCALA_VERSION -Dscala.version=$SCALA_VERSION clean test
+    sbt ++$SCALA_VERSION -Dscala.version=$SCALA_VERSION publishLocal
+    # and so on...
+
 ### Creating the client
     
     import com.appministry.scathon.apiClient._
@@ -104,7 +113,7 @@ The project is very helpful is one's goal is to write a Marathon based applicati
 To use the test server in one's unit tests:
 
     libraryDependencies ++= Seq(
-      "org.appministry" %% "scathon-test-server" % "1.0.0" % "test"
+      "org.appministry" %% "scathon-test-server" % "0.1.2" % "test"
     )
 
 In the unit tests:

@@ -50,7 +50,7 @@ trait GetAppResponseParser extends ApplicationParser {
   implicit val getAppResponseFormat: Format[GetAppResponse] = ( __ \ "app" ).format[Application].inmap(GetAppResponse.apply, unlift(GetAppResponse.unapply))
 }
 
-trait GetApplicationVersionsResponseParser extends EnumParser {
+trait GetApplicationVersionsResponseParser extends EnumParser with VersionParser {
   implicit val getAppVersionsResponseFormat: Format[GetVersionsResponse] = ( __ \ "versions" ).format[List[DateTime]].inmap(GetVersionsResponse.apply, unlift(GetVersionsResponse.unapply))
 }
 

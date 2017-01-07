@@ -1,7 +1,7 @@
-organization := "com.appministry"
+import BuildDefaults._
+
+scalaVersion := BuildDefaults.buildScalaVersion
+version := BuildDefaults.buildVersion
+organization := BuildDefaults.buildOrganization
 
 name := "scathon"
-
-version := "0.1.1"
-
-scalaVersion := "2.11.8"
