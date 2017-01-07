@@ -1,17 +1,17 @@
 import BuildDefaults._
 
-organization := "com.appministry"
+scalaVersion := BuildDefaults.buildScalaVersion
+version := BuildDefaults.buildVersion
+organization := BuildDefaults.buildOrganization
 
 name := "scathon-client"
 
-version := "0.1.1"
-
-scalaVersion := BuildDefaults.buildScalaVersion
-
 libraryDependencies ++= Seq(
-  "com.twitter" %% "finagle-http" % "6.34.0",
+  "com.twitter" %% "finagle-http" % "6.41.0",
   "io.dropwizard.metrics" % "metrics-core" % "3.1.0",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test"
+  "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )
 
 coverageEnabled := true
+
+crossScalaVersions := Seq("2.11.8", "2.12.1")
