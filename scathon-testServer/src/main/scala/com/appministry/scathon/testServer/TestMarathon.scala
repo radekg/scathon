@@ -58,6 +58,7 @@ class TestMarathon(val cfg: Option[Config]=None) {
   private[testServer] lazy val deployments: ConcurrentHashMap[String, Deployment] = new ConcurrentHashMap[String, Deployment]
   private[testServer] lazy val callbackUrls: ConcurrentSkipListSet[String] = new ConcurrentSkipListSet[String]
 
+  private[testServer] lazy val events: ConcurrentLinkedDeque[MarathonEventBusObject] = new ConcurrentLinkedDeque[MarathonEventBusObject]
   private[testServer] lazy val queue: ConcurrentLinkedDeque[QueueItem] = new ConcurrentLinkedDeque[QueueItem]
   private[testServer] lazy val deploymentQueue: ConcurrentLinkedDeque[Deployment] = new ConcurrentLinkedDeque[Deployment]
 

@@ -307,7 +307,7 @@ trait DeploymentInfoEventParser extends EventParser with VersionParser with Depl
 }
 
 trait DeploymentStepSuccessEventParser extends EventParser with VersionParser with DeploymentEventPlanParser with DeploymentCurrentStepParser {
-  implicit val deploymentInfoEventFormat: Format[DeploymentStepSuccessEvent] = (
+  implicit val deploymentStepSuccessEventFormat: Format[DeploymentStepSuccessEvent] = (
     ( __ \ "eventType" ).format[EventTypes.EventType] and
     ( __ \ "timestamp" ).format[DateTime] and
     ( __ \ "plan" ).format[DeploymentEventPlan] and
@@ -316,7 +316,7 @@ trait DeploymentStepSuccessEventParser extends EventParser with VersionParser wi
 }
 
 trait DeploymentStepFailureEventParser extends EventParser with VersionParser with DeploymentEventPlanParser with DeploymentCurrentStepParser {
-  implicit val deploymentInfoEventFormat: Format[DeploymentStepFailureEvent] = (
+  implicit val deploymentStepFailureEventFormat: Format[DeploymentStepFailureEvent] = (
     ( __ \ "eventType" ).format[EventTypes.EventType] and
     ( __ \ "timestamp" ).format[DateTime] and
     ( __ \ "plan" ).format[DeploymentEventPlan] and
