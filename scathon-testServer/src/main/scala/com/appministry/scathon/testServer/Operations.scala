@@ -8,6 +8,7 @@ import java.io.File
 import java.nio.file.{Files, Paths}
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+
 import com.appministry.scathon.models.v2.{Version => MVersion}
 import com.appministry.scathon.models.v2._
 import com.twitter.concurrent.AsyncStream
@@ -16,7 +17,7 @@ import com.twitter.finagle.http.exp.Multipart
 import com.twitter.finagle.http._
 import com.twitter.io.{Buf, Reader}
 import com.twitter.logging.Logger
-import com.twitter.util.{JavaTimer, Future}
+import com.twitter.util.{Duration, Future, JavaTimer}
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.Json
 
@@ -32,15 +33,40 @@ class Operations(val marathon: TestMarathon ) extends
   with DeploymentParser
   with DeploymentIdentifierParser
   with GetEventSubscriptionsResponseParser
-  with EventSubscriptionSubscribeEventParser
-  with EventSubscriptionUnsubscribeEventParser
   with GetLeaderResponseParser
   with GetPluginsResponseParser
   with GetQueueResponseParser
-  with GetInfoResponseParser {
+  with GetInfoResponseParser
+  // event types:
+  with ApiPostEventParser
+  with StatusUpdateEventParser
+  with FrameworkMessageEventParser
+  with EventSubscriptionSubscribeEventParser
+  with EventSubscriptionUnsubscribeEventParser
+  with AddHealthCheckEventParser
+  with RemoveHealthCheckEventParser
+  with FailedHealthCheckEventParser
+  with HealthStatusChangedEventParser
+  with UnhealthyTaskKillEventParser
+  with GroupChangeSuccessEventParser
+  with GroupChangeFailedEventParser
+  with DeploymentSuccessEventParser
+  with DeploymentFailedEventParser
+  with DeploymentEventPlanParser
+  with DeploymentCurrentStepParser
+  with DeploymentInfoEventParser
+  with DeploymentStepSuccessEventParser
+  with DeploymentStepFailureEventParser {
 
   private val fileField: String = "file"
   private val apiVersion = Try { marathon.config.getString("testMarathon.api-version") }.getOrElse( "v2" )
+
+  private def offerAnEvent(event: MarathonEventBusObject): Unit = {
+    marathon.events.offer(event)
+    marathon.callbackUrls.foreach { callbackUrl =>
+      marathon.executor.execute( new Callback( callbackUrl, event ) )
+    }
+  }
 
   //
   // APPS
@@ -108,15 +134,13 @@ class Operations(val marathon: TestMarathon ) extends
         } else {
           val storedApp = app.copy(version = Some(MVersion()))
           marathon.apps.put(app.id, storedApp)
-          marathon.callbackUrls.foreach { callbackUrl =>
-            val event = ApiPostEvent(
+          offerAnEvent(
+            ApiPostEvent(
               eventType = EventTypes.api_post_event,
               timestamp = MVersion(),
               clientIp = request.remoteAddress.getHostAddress,
               uri = "/v2/apps/" + storedApp.id,
-              appDefinition = storedApp )
-            marathon.executor.execute( new Callback( callbackUrl, event ) )
-          }
+              appDefinition = storedApp ))
           marathon.queue.offer(QueueItem( storedApp, storedApp.instances, QueueDelay(0, false) ))
           Response(request.version, Status.Created, Reader.fromBuf(
             Buf.Utf8(applicationFormat.writes(app).toString())
@@ -144,15 +168,13 @@ class Operations(val marathon: TestMarathon ) extends
                                      currentStep = 1,
                                      totalSteps = 1 )
 
-        marathon.callbackUrls.foreach { callbackUrl =>
-          val event = ApiPostEvent(
+        offerAnEvent(
+          ApiPostEvent(
             eventType = EventTypes.api_post_event,
             timestamp = MVersion(),
             clientIp = request.remoteAddress.getHostAddress,
             uri = "/v2/apps/" + app.id,
-            appDefinition = app )
-          marathon.executor.execute( new Callback( callbackUrl, event ) )
-        }
+            appDefinition = app ))
 
         Response(request.version, Status.Ok, Reader.fromBuf(
           Buf.Utf8( deploymentIdentifierFormat.writes( marathon.addDeployment(deployment) ).toString() )
@@ -232,15 +254,13 @@ class Operations(val marathon: TestMarathon ) extends
                                      currentStep = 1,
                                      totalSteps = 1 )
 
-        marathon.callbackUrls.foreach { callbackUrl =>
-          val event = ApiPostEvent(
+        offerAnEvent(
+          ApiPostEvent(
             eventType = EventTypes.api_post_event,
             timestamp = MVersion(),
             clientIp = request.remoteAddress.getHostAddress,
             uri = "/v2/apps/" + app.id,
-            appDefinition = app )
-          marathon.executor.execute( new Callback( callbackUrl, event ) )
-        }
+            appDefinition = app ))
 
         Response(request.version, Status.Ok, Reader.fromBuf(
           Buf.Utf8( deploymentIdentifierFormat.writes( marathon.addDeployment(deployment) ).toString() )
@@ -385,13 +405,44 @@ class Operations(val marathon: TestMarathon ) extends
 
   //
   // EVENTS
-  // We are emulating anything, the content not important at this stage.
+
   implicit val timer = new JavaTimer
-  def events(): AsyncStream[String] =
-    System.currentTimeMillis().toString +:: AsyncStream.fromFuture(Future.sleep(1000.millis)).flatMap(_ => events())
-  @volatile private[this] var eventsStream: AsyncStream[Buf] = events().map(n => Buf.Utf8(n))
+
+  def events(): AsyncStream[MarathonEventBusObject] = {
+    Option(marathon.events.poll()) match {
+      case Some(e) => e +:: AsyncStream.fromFuture(Future.sleep(1.microsecond)).flatMap(_ => events())
+      case None => AsyncStream.fromFuture(Future.sleep(500.millis)).flatMap(_ => events())
+    }
+  }
+
+  @volatile private[this] var eventsStream: AsyncStream[Buf] = events().map { n =>
+    n match {
+      case ev: ApiPostEvent => Buf.Utf8(apiPostEventFormat.writes(ev).toString())
+      case ev: StatusUpdateEvent => Buf.Utf8(statusUpdateEventFormat.writes(ev).toString())
+      case ev: FrameworkMessageEvent => Buf.Utf8(frameworkMessageEventFormat.writes(ev).toString())
+      case ev: EventSubscriptionSubscribeEvent => Buf.Utf8(eventSubscriptionSubscribeEventFormat.writes(ev).toString())
+      case ev: EventSubscriptionUnsubscribeEvent => Buf.Utf8(eventSubscriptionUnsubscribeEventFormat.writes(ev).toString())
+      case ev: AddHealthCheckEvent => Buf.Utf8(addHealthCheckEventFormat.writes(ev).toString())
+      case ev: RemoveHealthCheckEvent => Buf.Utf8(removeHealthCheckEventFormat.writes(ev).toString())
+      case ev: FailedHealthCheckEvent => Buf.Utf8(failedHealthCheckEventFormat.writes(ev).toString())
+      case ev: HealthStatusChangedEvent => Buf.Utf8(healthStatusChangedEventFormat.writes(ev).toString())
+      case ev: UnhealthyTaskKillEvent => Buf.Utf8(unhealthyTaskKillEventFormat.writes(ev).toString())
+      case ev: GroupChangeSuccessEvent => Buf.Utf8(groupChangeSuccessEventFormat.writes(ev).toString())
+      case ev: GroupChangeFailedEvent => Buf.Utf8(groupChangeFailedEventFormat.writes(ev).toString())
+      case ev: DeploymentSuccessEvent => Buf.Utf8(deploymentSuccessEventFormat.writes(ev).toString())
+      case ev: DeploymentFailedEvent => Buf.Utf8(deploymentFailedEventFormat.writes(ev).toString())
+      case ev: DeploymentEventPlan => Buf.Utf8(deploymentEventPlanFormat.writes(ev).toString())
+      case ev: DeploymentCurrentStep => Buf.Utf8(deploymentCurrentStepFormat.writes(ev).toString())
+      case ev: DeploymentInfoEvent => Buf.Utf8(deploymentInfoEventFormat.writes(ev).toString())
+      case ev: DeploymentStepSuccessEvent => Buf.Utf8(deploymentStepSuccessEventFormat.writes(ev).toString())
+      case ev: DeploymentStepFailureEvent => Buf.Utf8(deploymentStepFailureEventFormat.writes(ev).toString())
+      case _ => Buf.Utf8("not supported event type")
+    }
+  }
+
   eventsStream.foreach(_ => eventsStream = eventsStream.drop(1))
   def getEvents(request: Request): Response = {
+    println(" ==============================================> sending an event...")
     val writable = Reader.writable()
     eventsStream.foreachF(writable.write)
     Response(request.version, Status.Ok, writable)
@@ -415,9 +466,7 @@ class Operations(val marathon: TestMarathon ) extends
           callbackUrl = url,
           clientIp = "0:0:0:0:0:0:0:1",
           timestamp = MVersion() )
-        marathon.callbackUrls.foreach { callbackUrl =>
-          marathon.executor.execute( new Callback(callbackUrl, event) )
-        }
+        offerAnEvent(event)
         marathon.callbackUrls.add(event.callbackUrl)
         Logger.get().info(s"${event.callbackUrl} registered as event listener")
         Response(request.version, Status.Created, Reader.fromBuf(
@@ -435,9 +484,7 @@ class Operations(val marathon: TestMarathon ) extends
           clientIp = "0:0:0:0:0:0:0:1",
           timestamp = MVersion() )
         marathon.callbackUrls.remove(event.callbackUrl)
-        marathon.callbackUrls.foreach { callbackUrl =>
-          marathon.executor.execute( new Callback(callbackUrl, event) )
-        }
+        offerAnEvent(event)
         Logger.get().info(s"${event.callbackUrl} de-registered as event listener")
         Response(request.version, Status.Ok, Reader.fromBuf(
           Buf.Utf8( eventSubscriptionUnsubscribeEventFormat.writes( event ).toString() )

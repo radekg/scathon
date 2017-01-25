@@ -4,6 +4,8 @@
   */
 package com.appministry.scathon.client
 
+import com.appministry.scathon.models.v2.Application
+
 class EventsTests extends TestBase {
 
   "Events Tests" should {
@@ -14,6 +16,11 @@ class EventsTests extends TestBase {
       client.streamEvents(toReceive) { msg =>
         received += 1
       }
+
+      (0 to toReceive).foreach { idx =>
+        client.createApp(Application(id=s"application-$idx"))
+      }
+
       eventually {
         received shouldBe(toReceive)
       }
