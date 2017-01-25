@@ -439,10 +439,8 @@ class Operations(val marathon: TestMarathon ) extends
       case _ => Buf.Utf8("not supported event type")
     }
   }
-
-  eventsStream.foreach(_ => eventsStream = eventsStream.drop(1))
+  
   def getEvents(request: Request): Response = {
-    println(" ==============================================> sending an event...")
     val writable = Reader.writable()
     eventsStream.foreachF(writable.write)
     Response(request.version, Status.Ok, writable)
