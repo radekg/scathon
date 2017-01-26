@@ -11,8 +11,8 @@ This is a Scala Marathon Client. The aim is to provide a 100% coverage of the Ma
 ### Dependencies
 
     libraryDependencies ++= Seq(
-      "com.appministry" %% "scathon-models" % "0.1.3",
-      "com.appministry" %% "scathon-client" % "0.1.3"
+      "uk.co.appministry" %% "scathon-models" % "0.2.0",
+      "uk.co.appministry" %% "scathon-client" % "0.2.0"
     )
 
 In `project/plugins.sbt`, add:
@@ -28,7 +28,7 @@ In `project/plugins.sbt`, add:
 
 ### Creating the client
     
-    import com.appministry.scathon.apiClient._
+    import uk.co.appministry.scathon.apiClient._
     val client = new Client
     
 ## Examples
@@ -54,9 +54,9 @@ The client comes with a rich unit tests suite. A lot of examples can be found in
     
 ### Creating an application
     
-    import com.appministry.scathon.models.mesos.UniqueConstraint
-    import com.appministry.scathon.apiClient._
-    import com.appministry.scathon.models._
+    import uk.co.appministry.scathon.models.mesos.UniqueConstraint
+    import uk.co.appministry.scathon.apiClient._
+    import uk.co.appministry.scathon.models._
     
     val app = Application( id = "/app/test",
                            cmd = Some("/bin/sleep"),
@@ -118,7 +118,7 @@ To use the test server in one's unit tests:
 
 In the unit tests:
 
-    import com.appministry.scathon.apiClient._
+    import uk.co.appministry.scathon.apiClient._
     import org.appministry.scathon.testServer._
     
     val server = new TestMarathon
