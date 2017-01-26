@@ -11,8 +11,8 @@ This is a Scala Marathon Client. The aim is to provide a 100% coverage of the Ma
 ### Dependencies
 
     libraryDependencies ++= Seq(
-      "uk.co.appministry" %% "scathon-models" % "0.2.0",
-      "uk.co.appministry" %% "scathon-client" % "0.2.0"
+      "uk.co.appministry" %% "scathon-models" % "0.2.1",
+      "uk.co.appministry" %% "scathon-client" % "0.2.1"
     )
 
 In `project/plugins.sbt`, add:

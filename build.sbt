@@ -5,3 +5,5 @@ version := BuildDefaults.buildVersion
 organization := BuildDefaults.buildOrganization
 
 name := "scathon"
+
+publishArtifact := false
