@@ -12,7 +12,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.1" % "test"
 )
 
-coverageEnabled := true
+coverageEnabled in Test := true
 
 crossScalaVersions := Seq("2.11.8", "2.12.1")
 
