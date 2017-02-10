@@ -26,12 +26,14 @@ case class GetEventSubscriptionsResponse(
 case class GetInfoResponse(
            val frameworkId: String,
            val httpConfig: HttpConfiguration,
-           val eventSubscriber: EventSubscriber,
+           val eventSubscriber: Option[EventSubscriber],
            val marathonConfig: MarathonConfiguration,
            val zookeeperConfig: ZookeeperConfiguration,
            val leader: Option[String] = None,
            val version: String = "0.15.3",
-           val name: String = "marathon" )
+           val name: String = "marathon",
+           val buildref: Option[String] = None,
+           val elected: Option[Boolean] = None)
 
 case class GetLeaderResponse(
            val leader:String = "127.0.0.1:8080" )
@@ -69,14 +71,17 @@ trait GetInfoResponseParser extends HttpConfigurationParser
                             with    MarathonConfigurationParser
                             with    ZookeeperConfigurationParser {
   implicit val getInfoResponseFormat: Format[GetInfoResponse] = (
+
     ( __ \ "frameworkId" ).format[ String ] and
     ( __ \ "http_config" ).format[HttpConfiguration] and
-    ( __ \ "event_subscriber" ).format[EventSubscriber] and
+    ( __ \ "event_subscriber" ).formatNullable[EventSubscriber] and
     ( __ \ "marathon_config" ).format[MarathonConfiguration] and
     ( __ \ "zookeeper_config" ).format[ZookeeperConfiguration] and
     ( __ \ "leader" ).formatNullable[String] and
     ( __ \ "version" ).format[String] and
-    ( __ \ "name" ).format[String]
+    ( __ \ "name" ).format[String] and
+    ( __ \ "buildref" ).formatNullable[String] and
+    ( __ \ "elected" ).formatNullable[Boolean]
   )(GetInfoResponse.apply, unlift(GetInfoResponse.unapply))
 }
 

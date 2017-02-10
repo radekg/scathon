@@ -30,13 +30,19 @@ case class MarathonConfiguration(
            val mesosUser: String = "root",
            val reconciliationInitialDelay: Int = 30000,
            val reconciliationInterval: Int = 30000,
-           val taskLaunchTimeout: Int = 60000 ) extends MarathonApiObject
+           val taskLaunchTimeout: Int = 60000,
+           val frameworkName: Option[String] = None,
+           val webUri: Option[String] = None,
+           val taskReservationTimeout: Option[Int] = None,
+           val leaderProxyConnectionTimeoutMs: Option[Int] = None,
+           val leaderProxyReadTimeoutMs: Option[Int] = None,
+           val features: Option[List[String]] = None) extends MarathonApiObject
 
 case class ZookeeperConfiguration(
            val zk:String = "zk://localhost:2181/marathon",
            val zkTimeout:Int=10000,
            val zkSessionTimeout:Int=1800000,
-           val zkMaxVersion:Int=5 ) extends MarathonApiObject
+           val zkMaxVersions:Int=5 ) extends MarathonApiObject
 
 trait HttpConfigurationParser {
   implicit val httpConfigurationFormat: Format[HttpConfiguration] = (
@@ -68,7 +74,13 @@ trait MarathonConfigurationParser {
     ( __ \ "mesos_user" ).format[String] and
     ( __ \ "reconciliation_initial_delay" ).format[Int] and
     ( __ \ "reconciliation_interval" ).format[ Int ] and
-    ( __ \ "task_launch_timeout" ).format[Int]
+    ( __ \ "task_launch_timeout" ).format[Int] and
+    ( __ \ "framework_name" ).formatNullable[String] and
+    ( __ \ "web_uri" ).formatNullable[String] and
+    ( __ \ "task_reservation_timeout" ).formatNullable[Int] and
+    ( __ \ "leader_proxy_connection_timeout_ms" ).formatNullable[Int] and
+    ( __ \ "leader_proxy_read_timeout_ms" ).formatNullable[Int] and
+    ( __ \ "features" ).formatNullable[List[String]]
   )(MarathonConfiguration.apply, unlift(MarathonConfiguration.unapply))
 }
 
@@ -77,6 +89,6 @@ trait ZookeeperConfigurationParser {
     ( __ \ "zk" ).format[ String ] and
     ( __ \ "zk_timeout" ).format[Int] and
     ( __ \ "zk_session_timeout" ).format[Int] and
-    ( __ \ "zk_max_version" ).format[Int]
+    ( __ \ "zk_max_versions" ).format[Int]
   )(ZookeeperConfiguration.apply, unlift(ZookeeperConfiguration.unapply))
 }
