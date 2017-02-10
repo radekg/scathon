@@ -14,7 +14,7 @@ class EventsTests extends TestBase {
       val toReceive = 5
       var received = 0
       client.streamEvents(toReceive) { msg =>
-        received += 1
+        if (msg.trim.startsWith("data: ")) received += 1
       }
 
       (0 to toReceive).foreach { idx =>

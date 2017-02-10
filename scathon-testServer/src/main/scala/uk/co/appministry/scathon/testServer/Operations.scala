@@ -415,28 +415,29 @@ class Operations(val marathon: TestMarathon ) extends
   }
 
   @volatile private[this] var eventsStream: AsyncStream[Buf] = events().map { n =>
-    n match {
-      case ev: ApiPostEvent => Buf.Utf8(apiPostEventFormat.writes(ev).toString())
-      case ev: StatusUpdateEvent => Buf.Utf8(statusUpdateEventFormat.writes(ev).toString())
-      case ev: FrameworkMessageEvent => Buf.Utf8(frameworkMessageEventFormat.writes(ev).toString())
-      case ev: EventSubscriptionSubscribeEvent => Buf.Utf8(eventSubscriptionSubscribeEventFormat.writes(ev).toString())
-      case ev: EventSubscriptionUnsubscribeEvent => Buf.Utf8(eventSubscriptionUnsubscribeEventFormat.writes(ev).toString())
-      case ev: AddHealthCheckEvent => Buf.Utf8(addHealthCheckEventFormat.writes(ev).toString())
-      case ev: RemoveHealthCheckEvent => Buf.Utf8(removeHealthCheckEventFormat.writes(ev).toString())
-      case ev: FailedHealthCheckEvent => Buf.Utf8(failedHealthCheckEventFormat.writes(ev).toString())
-      case ev: HealthStatusChangedEvent => Buf.Utf8(healthStatusChangedEventFormat.writes(ev).toString())
-      case ev: UnhealthyTaskKillEvent => Buf.Utf8(unhealthyTaskKillEventFormat.writes(ev).toString())
-      case ev: GroupChangeSuccessEvent => Buf.Utf8(groupChangeSuccessEventFormat.writes(ev).toString())
-      case ev: GroupChangeFailedEvent => Buf.Utf8(groupChangeFailedEventFormat.writes(ev).toString())
-      case ev: DeploymentSuccessEvent => Buf.Utf8(deploymentSuccessEventFormat.writes(ev).toString())
-      case ev: DeploymentFailedEvent => Buf.Utf8(deploymentFailedEventFormat.writes(ev).toString())
-      case ev: DeploymentEventPlan => Buf.Utf8(deploymentEventPlanFormat.writes(ev).toString())
-      case ev: DeploymentCurrentStep => Buf.Utf8(deploymentCurrentStepFormat.writes(ev).toString())
-      case ev: DeploymentInfoEvent => Buf.Utf8(deploymentInfoEventFormat.writes(ev).toString())
-      case ev: DeploymentStepSuccessEvent => Buf.Utf8(deploymentStepSuccessEventFormat.writes(ev).toString())
-      case ev: DeploymentStepFailureEvent => Buf.Utf8(deploymentStepFailureEventFormat.writes(ev).toString())
-      case _ => Buf.Utf8("not supported event type")
+    val data = n match {
+      case ev: ApiPostEvent => apiPostEventFormat.writes(ev).toString()
+      case ev: StatusUpdateEvent => statusUpdateEventFormat.writes(ev).toString()
+      case ev: FrameworkMessageEvent => frameworkMessageEventFormat.writes(ev).toString()
+      case ev: EventSubscriptionSubscribeEvent => eventSubscriptionSubscribeEventFormat.writes(ev).toString()
+      case ev: EventSubscriptionUnsubscribeEvent => eventSubscriptionUnsubscribeEventFormat.writes(ev).toString()
+      case ev: AddHealthCheckEvent => addHealthCheckEventFormat.writes(ev).toString()
+      case ev: RemoveHealthCheckEvent => removeHealthCheckEventFormat.writes(ev).toString()
+      case ev: FailedHealthCheckEvent => failedHealthCheckEventFormat.writes(ev).toString()
+      case ev: HealthStatusChangedEvent => healthStatusChangedEventFormat.writes(ev).toString()
+      case ev: UnhealthyTaskKillEvent => unhealthyTaskKillEventFormat.writes(ev).toString()
+      case ev: GroupChangeSuccessEvent => groupChangeSuccessEventFormat.writes(ev).toString()
+      case ev: GroupChangeFailedEvent => groupChangeFailedEventFormat.writes(ev).toString()
+      case ev: DeploymentSuccessEvent => deploymentSuccessEventFormat.writes(ev).toString()
+      case ev: DeploymentFailedEvent => deploymentFailedEventFormat.writes(ev).toString()
+      case ev: DeploymentEventPlan => deploymentEventPlanFormat.writes(ev).toString()
+      case ev: DeploymentCurrentStep => deploymentCurrentStepFormat.writes(ev).toString()
+      case ev: DeploymentInfoEvent => deploymentInfoEventFormat.writes(ev).toString()
+      case ev: DeploymentStepSuccessEvent => deploymentStepSuccessEventFormat.writes(ev).toString()
+      case ev: DeploymentStepFailureEvent => deploymentStepFailureEventFormat.writes(ev).toString()
+      case ev => Buf.Utf8(s"not supported event type: ${ev.getClass}")
     }
+    Buf.Utf8(s"data: $data\n")
   }
   
   def getEvents(request: Request): Response = {
@@ -499,9 +500,9 @@ class Operations(val marathon: TestMarathon ) extends
       frameworkId = marathon.frameworkId,
       leader = marathon.leader.map { l => l.leader },
       httpConfig = HttpConfiguration(),
-      eventSubscriber = EventSubscriber(
+      eventSubscriber = Some(EventSubscriber(
         httpEndpoints = marathon.callbackUrls.toList
-      ),
+      )),
       marathonConfig = MarathonConfiguration(),
       zookeeperConfig = ZookeeperConfiguration() )
     Response(req.version, Status.Ok, Reader.fromBuf(

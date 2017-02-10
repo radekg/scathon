@@ -831,7 +831,10 @@ class Client( val host: String = "localhost",
   def streamEvents( limit: Int = 0 )( onMessage: ( String ) => Unit ): Unit = {
     var received = 0
     val streamingCli: Service[Request, Response] = Http.client.withStreaming(enabled = true).withRequestTimeout(requestTimeout.milliseconds).newService(clientHost)
-    streamingCli( buildRequest( Method.Get, "events", Map(Fields.Accept -> "text/event-stream"), None ) ).onSuccess { response =>
+    val headers = Map(
+      Fields.Accept -> "text/event-stream",
+      Fields.AcceptEncoding -> "gzip, deflate")
+    streamingCli( buildRequest( Method.Get, "events", headers, None ) ).onSuccess { response =>
       fromReader(response.reader).foreach {
         case Buf.Utf8(buf) if limit == 0 || ( limit > 0 && received < limit ) =>
           onMessage.apply( new String(buf.getBytes, StandardCharsets.UTF_8) )
