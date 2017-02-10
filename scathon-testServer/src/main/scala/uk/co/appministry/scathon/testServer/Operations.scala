@@ -18,6 +18,7 @@ import com.twitter.logging.Logger
 import com.twitter.util.{Future, JavaTimer}
 import org.apache.commons.io.FileUtils
 import play.api.libs.json.Json
+import uk.co.appministry.scathon.models.sse.ServerSentEvent
 import uk.co.appministry.scathon.models.v2.{Version => MVersion, _}
 
 import scala.collection.JavaConversions._
@@ -416,28 +417,26 @@ class Operations(val marathon: TestMarathon ) extends
 
   @volatile private[this] var eventsStream: AsyncStream[Buf] = events().map { n =>
     val data = n match {
-      case ev: ApiPostEvent => apiPostEventFormat.writes(ev).toString()
-      case ev: StatusUpdateEvent => statusUpdateEventFormat.writes(ev).toString()
-      case ev: FrameworkMessageEvent => frameworkMessageEventFormat.writes(ev).toString()
-      case ev: EventSubscriptionSubscribeEvent => eventSubscriptionSubscribeEventFormat.writes(ev).toString()
-      case ev: EventSubscriptionUnsubscribeEvent => eventSubscriptionUnsubscribeEventFormat.writes(ev).toString()
-      case ev: AddHealthCheckEvent => addHealthCheckEventFormat.writes(ev).toString()
-      case ev: RemoveHealthCheckEvent => removeHealthCheckEventFormat.writes(ev).toString()
-      case ev: FailedHealthCheckEvent => failedHealthCheckEventFormat.writes(ev).toString()
-      case ev: HealthStatusChangedEvent => healthStatusChangedEventFormat.writes(ev).toString()
-      case ev: UnhealthyTaskKillEvent => unhealthyTaskKillEventFormat.writes(ev).toString()
-      case ev: GroupChangeSuccessEvent => groupChangeSuccessEventFormat.writes(ev).toString()
-      case ev: GroupChangeFailedEvent => groupChangeFailedEventFormat.writes(ev).toString()
-      case ev: DeploymentSuccessEvent => deploymentSuccessEventFormat.writes(ev).toString()
-      case ev: DeploymentFailedEvent => deploymentFailedEventFormat.writes(ev).toString()
-      case ev: DeploymentEventPlan => deploymentEventPlanFormat.writes(ev).toString()
-      case ev: DeploymentCurrentStep => deploymentCurrentStepFormat.writes(ev).toString()
-      case ev: DeploymentInfoEvent => deploymentInfoEventFormat.writes(ev).toString()
-      case ev: DeploymentStepSuccessEvent => deploymentStepSuccessEventFormat.writes(ev).toString()
-      case ev: DeploymentStepFailureEvent => deploymentStepFailureEventFormat.writes(ev).toString()
-      case ev => Buf.Utf8(s"not supported event type: ${ev.getClass}")
+      case ev: ApiPostEvent => (ev.eventType.toString, apiPostEventFormat.writes(ev).toString())
+      case ev: StatusUpdateEvent => (ev.eventType.toString, statusUpdateEventFormat.writes(ev).toString())
+      case ev: FrameworkMessageEvent => (ev.eventType.toString, frameworkMessageEventFormat.writes(ev).toString())
+      case ev: EventSubscriptionSubscribeEvent => (ev.eventType.toString, eventSubscriptionSubscribeEventFormat.writes(ev).toString())
+      case ev: EventSubscriptionUnsubscribeEvent => (ev.eventType.toString, eventSubscriptionUnsubscribeEventFormat.writes(ev).toString())
+      case ev: AddHealthCheckEvent => (ev.eventType.toString, addHealthCheckEventFormat.writes(ev).toString())
+      case ev: RemoveHealthCheckEvent => (ev.eventType.toString, removeHealthCheckEventFormat.writes(ev).toString())
+      case ev: FailedHealthCheckEvent => (ev.eventType.toString, failedHealthCheckEventFormat.writes(ev).toString())
+      case ev: HealthStatusChangedEvent => (ev.eventType.toString, healthStatusChangedEventFormat.writes(ev).toString())
+      case ev: UnhealthyTaskKillEvent => (ev.eventType.toString, unhealthyTaskKillEventFormat.writes(ev).toString())
+      case ev: GroupChangeSuccessEvent => (ev.eventType.toString, groupChangeSuccessEventFormat.writes(ev).toString())
+      case ev: GroupChangeFailedEvent => (ev.eventType.toString, groupChangeFailedEventFormat.writes(ev).toString())
+      case ev: DeploymentSuccessEvent => (ev.eventType.toString, deploymentSuccessEventFormat.writes(ev).toString())
+      case ev: DeploymentFailedEvent => (ev.eventType.toString, deploymentFailedEventFormat.writes(ev).toString())
+      case ev: DeploymentInfoEvent => (ev.eventType.toString, deploymentInfoEventFormat.writes(ev).toString())
+      case ev: DeploymentStepSuccessEvent => (ev.eventType.toString, deploymentStepSuccessEventFormat.writes(ev).toString())
+      case ev: DeploymentStepFailureEvent => (ev.eventType.toString, deploymentStepFailureEventFormat.writes(ev).toString())
+      case ev => ("unsupported", s"not supported event type: ${ev.getClass}")
     }
-    Buf.Utf8(s"data: $data\n")
+    Buf.Utf8(ServerSentEvent(eventType = Some(data._1), data = Some(data._2)).toString())
   }
   
   def getEvents(request: Request): Response = {

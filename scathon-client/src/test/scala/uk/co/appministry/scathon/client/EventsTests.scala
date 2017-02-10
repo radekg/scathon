@@ -4,7 +4,7 @@
   */
 package uk.co.appministry.scathon.client
 
-import uk.co.appministry.scathon.models.v2.Application
+import uk.co.appministry.scathon.models.v2.{Application, EventTypes}
 
 class EventsTests extends TestBase {
 
@@ -13,8 +13,8 @@ class EventsTests extends TestBase {
     "receive events as a stream" in {
       val toReceive = 5
       var received = 0
-      client.streamEvents(toReceive) { msg =>
-        if (msg.trim.startsWith("data: ")) received += 1
+      client.streamEvents(toReceive) { event =>
+        if (event.eventType == Some(EventTypes.api_post_event.toString)) received += 1
       }
 
       (0 to toReceive).foreach { idx =>

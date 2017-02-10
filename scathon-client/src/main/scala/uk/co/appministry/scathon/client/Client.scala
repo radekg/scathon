@@ -8,8 +8,6 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.util.Base64
 
-import uk.co.appministry.scathon.models.v2._
-import uk.co.appministry.scathon.models.v2.util.VersionUtils
 import com.twitter.concurrent.AsyncStream
 import com.twitter.conversions.time._
 import com.twitter.finagle.http._
@@ -18,6 +16,9 @@ import com.twitter.io.{Buf, Reader}
 import com.twitter.util.{Future => TFuture}
 import org.joda.time.DateTime
 import play.api.libs.json.{JsValue, Json}
+import uk.co.appministry.scathon.models.sse.{ServerSentEvent, ServerSentEventParser}
+import uk.co.appministry.scathon.models.v2._
+import uk.co.appministry.scathon.models.v2.util.VersionUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
@@ -815,7 +816,7 @@ class Client( val host: String = "localhost",
 
   private def fromReader(reader: Reader): AsyncStream[Buf] =
     AsyncStream.fromFuture(reader.read(Int.MaxValue)).flatMap {
-      case None => AsyncStream.empty
+      case None => fromReader(reader)
       case Some(a) => a +:: fromReader(reader)
     }
 
@@ -828,19 +829,21 @@ class Client( val host: String = "localhost",
     * @param limit Maximum number of messages to receive
     * @param onMessage message receive callback function
     */
-  def streamEvents( limit: Int = 0 )( onMessage: ( String ) => Unit ): Unit = {
+  def streamEvents( limit: Int = 0 )( onMessage: ( ServerSentEvent ) => Unit ): Unit = {
     var received = 0
-    val streamingCli: Service[Request, Response] = Http.client.withStreaming(enabled = true).withRequestTimeout(requestTimeout.milliseconds).newService(clientHost)
-    val headers = Map(
-      Fields.Accept -> "text/event-stream",
-      Fields.AcceptEncoding -> "gzip, deflate")
+    val streamingCli: Service[Request, Response] = Http.client.withStreaming(enabled = true).newService(clientHost)
+    val headers = Map( Fields.Accept -> "text/event-stream" )
     streamingCli( buildRequest( Method.Get, "events", headers, None ) ).onSuccess { response =>
       fromReader(response.reader).foreach {
         case Buf.Utf8(buf) if limit == 0 || ( limit > 0 && received < limit ) =>
-          onMessage.apply( new String(buf.getBytes, StandardCharsets.UTF_8) )
-          received += 1
-        case _ =>
-          streamingCli.close()
+          val msg = new String(buf.getBytes, StandardCharsets.UTF_8)
+          ServerSentEventParser.parse(buf.getBytes) match {
+            case Some(event) =>
+              onMessage.apply( event )
+              received += 1
+            case None =>
+          }
+        case _ => streamingCli.close()
       }
     }
   }
